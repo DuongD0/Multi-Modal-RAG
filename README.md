@@ -165,7 +165,3 @@ python -m backend.utils.process_pdf /path/to/document.pdf
 - **Document Processing**: Unstructured, PDF2Image
 - **UI**: Streamlit
 - **Utilities**: Pydantic, Python-dotenv, TQDM
-
-## License
-
-See [LICENSE](LICENSE) file for details.
