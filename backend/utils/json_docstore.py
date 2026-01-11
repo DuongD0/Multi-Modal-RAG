@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union, Iterator
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_core.stores import BaseStore
 
 

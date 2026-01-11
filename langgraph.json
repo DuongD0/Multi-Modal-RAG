@@ -1,0 +1,7 @@
+{
+  "graphs": {
+    "rag_agent": "./backend/langgraph/graph.py:graph"
+  },
+  "env": ".env"
+}
+

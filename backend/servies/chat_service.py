@@ -3,14 +3,14 @@ import time
 import uuid
 from typing import List, Optional, Any, Dict
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.vectorstores import VectorStore
-from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain_core.retrievers import BaseRetriever
 
 from backend.core.config import Settings
 from backend.core.dependency import persist_vector_store
@@ -55,11 +55,9 @@ class ChatService(ChatInterface):
         self.file_service = file_service
         self.model_service = model_service
         self.docstore = docstore
-        self.retriever = MultiVectorRetriever(
-            vectorstore=self.vector_store,
-            docstore=self.docstore,
-            id_key="doc_id",
-            search_kwargs={"k": self.cfg.search_k},
+        # Use vector store's built-in retriever (compatible with LangChain 0.3+)
+        self.retriever: BaseRetriever = self.vector_store.as_retriever(
+            search_kwargs={"k": self.cfg.search_k}
         )
 
     def ingest(self, file_path: str) -> IngestResponse:

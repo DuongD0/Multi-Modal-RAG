@@ -1,40 +1,101 @@
 # Multi-Modal Local RAG
 
-
-End-to-end RAG (Retrieval-Augmented Generation) system with FastAPI backend for PDF ingestion, chunking, FAISS vector indexing, and retrieval-augmented QA using Ollama models. Features a Streamlit UI for document upload and chat interface, plus CLI tools for headless processing.
+End-to-end RAG (Retrieval-Augmented Generation) system with **LangGraph** backend for PDF ingestion, chunking, FAISS vector indexing, and retrieval-augmented QA using Ollama models. Features **Agent Chat UI** for a modern chat interface with streaming responses.
 
 ## Features
+
 - **PDF Processing**: Advanced PDF ingestion with text chunking, table extraction, and image handling
 - **Vector Search**: FAISS-based vector indexing and similarity search
 - **Multi-Modal Support**: Handles text, tables, and images from PDF documents
-- **Chat Interface**: Retrieval-augmented question answering with configurable top-k results
-- **Health Monitoring**: Comprehensive health checks for models and vector store
+- **LangGraph Agent**: Tool-calling agent with document ingestion and search capabilities
+- **Streaming Responses**: Real-time streaming responses via LangGraph
+- **Modern Chat UI**: Agent Chat UI (Next.js) for interactive conversations
 - **Persistent Storage**: JSON-based document store with vector persistence
 
-## Setup
+## Prerequisites
 
-### Prerequisites
-- Python ≥3.10
+- Python ≥3.11
+- Node.js ≥18
 - Ollama running locally with required models
 
-### Installation
+## Quick Start
+
+### 1. Install Python Dependencies
+
 ```bash
-# Install dependencies
+# Install uv if not already installed
 pip install uv
-# or with uv
+
+# Install dependencies
 uv sync
 ```
 
-### Ollama Models
+### 2. Install Ollama Models
+
 Ensure Ollama is running and pull required models:
+
 ```bash
 ollama pull gemma3
 ollama pull embeddinggemma:300m
 ```
 
+### 3. Install LangGraph CLI
+
+```bash
+pip install -U "langgraph-cli[inmem]"
+```
+
+### 4. Start the LangGraph Server
+
+```bash
+langgraph dev
+```
+
+The LangGraph server will be available at `http://localhost:2024`.
+
+### 5. Start the Agent Chat UI
+
+In a new terminal:
+
+```bash
+cd agent-chat-ui
+npm run dev
+```
+
+The chat UI will be available at `http://localhost:3000`.
+
+### 6. Connect and Chat
+
+1. Open `http://localhost:3000` in your browser
+2. Enter:
+   - **Deployment URL**: `http://localhost:2024`
+   - **Assistant/Graph ID**: `rag_agent`
+3. Click **Continue** to start chatting
+
+## Usage
+
+### Ingesting Documents
+
+In the chat, ask the agent to ingest a document:
+
+```
+Please ingest the document at /path/to/your/document.pdf
+```
+
+### Asking Questions
+
+After ingesting documents, ask questions:
+
+```
+What are the main topics covered in the document?
+```
+
+The agent will automatically search the knowledge base and provide answers based on the retrieved context.
+
 ## Configuration
 
 ### Environment Variables (.env)
+
 ```env
 APP_ENV=local
 DATA_DIR=./storage
@@ -44,124 +105,93 @@ OLLAMA_BASE_URL=http://localhost:11434
 SEARCH_K=4
 LOG_LEVEL=INFO
 LOG_TO_FILE=false
-# LOG_FILE=./storage/logs/app.log  # Optional custom log file path
 ```
 
-### Configuration Details
-- **Runtime Settings**: Managed in `backend/core/config.py` with environment variable overrides
-- **Storage**: Vector store, uploads, and logs default to `./storage/` directory
-- **Dependency Injection**: Service wiring handled in `backend/core/dependency.py`
-- **Logging**: Configurable via `LOG_LEVEL`, `LOG_TO_FILE`, and `LOG_FILE` variables
+### Agent Chat UI Environment
 
-## API Documentation
+Create `agent-chat-ui/apps/web/.env.local`:
 
-### Base URL
-`/api`
-
-### Endpoints
-
-#### Health Check
-```http
-GET /api/health
-```
-Returns system status, model readiness, and vector store statistics.
-
-#### Document Ingestion
-```http
-# Upload file
-POST /api/ingest
-Content-Type: multipart/form-data
-
-# Existing file path
-POST /api/ingest?file_path=/path/to/document.pdf
-```
-
-#### Chat/Query
-```http
-POST /api/chat
-Content-Type: application/json
-
-{
-  "question": "Your question here",
-  "k": 4
-}
-```
-
-### Example Usage
-```bash
-# Health check
-curl http://localhost:8000/api/health
-
-# Ingest via file path
-curl -X POST "http://localhost:8000/api/ingest?file_path=/full/path/to.pdf"
-
-# Ingest via upload
-curl -X POST -F "file=@/path/to/document.pdf" http://localhost:8000/api/ingest
-
-# Chat query
-curl -X POST http://localhost:8000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question":"What is the main topic?","k":4}'
-```
-
-## Usage
-
-### Start API Server
-```bash
-uvicorn backend.main:app --reload
-```
-
-### Launch Streamlit UI
-```bash
-streamlit run streamlit_app.py
-```
-
-### CLI Document Processing
-```bash
-python -m backend.utils.process_pdf /path/to/document.pdf
+```env
+NEXT_PUBLIC_API_URL=http://localhost:2024
+NEXT_PUBLIC_ASSISTANT_ID=rag_agent
 ```
 
 ## Project Structure
 
 ```
 ├── backend/
-│   ├── app.py                 # FastAPI application entrypoint
-│   ├── api/
-│   │   ├── chat.py            # Ingest and chat endpoints
-│   │   └── health.py          # Health check endpoint
+│   ├── langgraph/             # LangGraph components
+│   │   ├── graph.py           # Main RAG agent graph
+│   │   ├── state.py           # Graph state definitions
+│   │   └── tools.py           # Agent tools (ingest, search)
 │   ├── core/
-│   │   ├── config.py          # Environment-driven configuration
-│   │   └── dependency.py      # Dependency injection setup
+│   │   ├── config.py          # Environment configuration
+│   │   └── dependency.py      # Dependency injection
 │   ├── models/
-│   │   └── schemas.py         # Pydantic request/response models
+│   │   └── schemas.py         # Pydantic models
 │   ├── servies/               # Business logic services
-│   │   ├── interface/         # Service interfaces
-│   │   │   ├── chat_interface.py
-│   │   │   ├── file_interface.py
-│   │   │   └── model_interface.py
-│   │   ├── chat_service.py    # RAG orchestration service
-│   │   ├── file_service.py    # PDF processing service
-│   │   ├── model_service.py   # Ollama model wrappers
-│   │   └── types.py           # Type definitions
-│   ├── system_prompts/
-│   │   ├── notebook_prompts.py
-│   │   └── prompt_v1.py       # System prompts for chat
-│   └── utils/
-│       ├── json_docstore.py   # Document persistence
-│       ├── logging.py         # Logging configuration
-│       ├── parent_store.py    # Parent document storage
-│       └── process_pdf.py     # CLI PDF processing
-├── streamlit_app.py           # Streamlit web interface
-├── prompts.py                 # Additional prompt utilities
-├── pyproject.toml             # Project dependencies
+│   │   ├── chat_service.py    # RAG orchestration
+│   │   ├── file_service.py    # PDF processing
+│   │   └── model_service.py   # Ollama model wrappers
+│   ├── system_prompts/        # System prompts
+│   └── utils/                 # Utilities
+├── agent-chat-ui/             # Agent Chat UI (Next.js)
+├── langgraph.json             # LangGraph server config
+├── pyproject.toml             # Python dependencies
 └── .env                       # Environment configuration
 ```
 
 ## Tech Stack
 
-- **Backend**: FastAPI, Uvicorn
-- **ML/AI**: LangChain, Ollama, Transformers, PyTorch
+- **Backend**: LangGraph, LangChain, Ollama
 - **Vector Store**: FAISS
 - **Document Processing**: Unstructured, PDF2Image
-- **UI**: Streamlit
-- **Utilities**: Pydantic, Python-dotenv, TQDM
+- **Frontend**: Agent Chat UI (Next.js, React)
+- **ML/AI**: Transformers, PyTorch
+
+## Available Tools
+
+The RAG agent has access to these tools:
+
+| Tool                    | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| `ingest_document`       | Upload and process PDF documents into the knowledge base |
+| `search_knowledge_base` | Search for relevant information in uploaded documents    |
+
+## Development
+
+### Run LangGraph in Development Mode
+
+```bash
+langgraph dev --verbose
+```
+
+### View LangGraph Studio
+
+When running `langgraph dev`, LangGraph Studio is available at `http://localhost:2024/studio` for debugging and visualization.
+
+## Troubleshooting
+
+### Ollama Connection Issues
+
+Ensure Ollama is running:
+
+```bash
+ollama serve
+```
+
+### Vector Store Issues
+
+The vector store is persisted in `./storage/vector_store/`. To reset:
+
+```bash
+rm -rf ./storage/vector_store ./storage/docstore.json
+```
+
+### Agent Chat UI Issues
+
+If the UI can't connect, verify:
+
+1. LangGraph server is running on port 2024
+2. Environment variables are correctly set
+3. CORS is not blocking requests (local development should work automatically)

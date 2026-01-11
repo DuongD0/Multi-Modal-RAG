@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 from unstructured.partition.pdf import partition_pdf
 
 from backend.servies.interface.file_interface import FileInterface
