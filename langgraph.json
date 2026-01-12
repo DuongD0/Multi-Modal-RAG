@@ -1,4 +1,5 @@
 {
+  "dependencies": ["langgraph"],
   "graphs": {
     "rag_agent": "./backend/langgraph/graph.py:graph"
   },

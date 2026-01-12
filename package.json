@@ -1,0 +1,5 @@
+{
+	"devDependencies": {
+		"@langchain/langgraph-checkpoint": "0.0.16"
+	}
+}
